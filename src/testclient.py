@@ -16,22 +16,24 @@ import time
 
 import zmq
 import imagepack_pb2
-
-context = zmq.Context()
-socket = context.socket(zmq.REQ)
-socket.connect("tcp://localhost:5555")
+from time import time
 
 
 if __name__ == '__main__' :
-    from time import time
+
+    ##### connect to server  #####
+    context = zmq.Context()
+    socket = context.socket(zmq.REQ)
+    socket.connect("tcp://localhost:5555")
     
-    # send message
+    ##### send message #####
     socket.send_string("imageRequest")
     
-    # receive message
+    ##### receive message ####
     message = socket.recv()
     print("message recv")
     
+    ##### parse message ####
     message_input = imagepack_pb2.imagepack()
     message_input.ParseFromString(message)
     
@@ -44,6 +46,6 @@ if __name__ == '__main__' :
         img = nparr.reshape(message_input.imgs[i].height,message_input.imgs[i].width)
         print("image shape = ",img.shape)
         
-        stacked_img = np.stack((img,)*3, axis=-1)
+        stacked_img = np.stack((img,)*3, axis=-1) ##rearrange rgb
         imgplot = plt.imshow(stacked_img)
         plt.show()

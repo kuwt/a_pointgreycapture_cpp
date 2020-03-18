@@ -16,20 +16,23 @@ from time import sleep
 import zmq
 import imagepack_pb2
 
-context = zmq.Context()
-socket = context.socket(zmq.REQ)
-socket.connect("tcp://localhost:5555")
+
 
 if __name__ == '__main__' :
-    
+    ##### connect to server  #####
+    context = zmq.Context()
+    socket = context.socket(zmq.REQ)
+    socket.connect("tcp://localhost:5555")
     
     while True:
-        # send message
+        ##### send message #####
         socket.send_string("imageRequest")
         
-        # receive message
+        ##### receive message ####
         message = socket.recv()
         #print("message recv")
+        
+        ##### parse message ####
         message_input = imagepack_pb2.imagepack()
         message_input.ParseFromString(message)
         
@@ -43,17 +46,18 @@ if __name__ == '__main__' :
             img = nparr.reshape(message_input.imgs[i].height,message_input.imgs[i].width)
             #print("image shape = ",img.shape)
             
-            stacked_img = np.stack((img,)*3, axis=-1)
+            stacked_img = np.stack((img,)*3, axis=-1) ##rearrange rgb
             imglist.append(stacked_img)
         
-        numpy_horizontal_concat = np.concatenate((imglist[0], imglist[1]), axis=1)
+        ##### format display ####
+        numpy_horizontal_concat = np.concatenate((imglist[0], imglist[1]), axis=1) 
         
         targetHeight = 400
         scaleFactor =  float(targetHeight)/ float(numpy_horizontal_concat.shape[0]);
         targetWidth = int(numpy_horizontal_concat.shape[1] * scaleFactor);
         displayImg = cv2.resize(numpy_horizontal_concat,(targetWidth,targetHeight))
    
-        
+        #####  display ####
         cv2.imshow('window',displayImg)
         key = cv2.waitKey(1) & 0xFF
         
