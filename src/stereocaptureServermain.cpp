@@ -53,11 +53,11 @@ int main(int argc, char *argv[])
 	/************ service loop ***************/
 	while (true)
 	{
-		std::cout << "waiting connection...\n";
+		std::cout << "\r" <<"streaming...";  //inplace print
 		zmq::message_t request;
 		if (m_pSock->recv(&request, 0))
 		{
-			std::cout << "receive message...\n";
+			//std::cout << "receive message...\n";
 			/************ receive message ***************/
 			std::string  msgStr = std::string((char*)request.data(), request.size());
 			if (msgStr == "imageRequest")
@@ -75,8 +75,8 @@ int main(int argc, char *argv[])
 					(*sendMat).set_width(img.size().width);
 					(*sendMat).set_height(img.size().height);
 					(*sendMat).set_image_data((char *)img.data, sizeof(uchar) * img.size().width * img.size().height);
-					std::string s1 = (*sendMat).SerializeAsString();
-					std::cout << "s1.size() = " << s1.size() << "\n";
+					//std::string s1 = (*sendMat).SerializeAsString();
+					//std::cout << "s1.size() = " << s1.size() << "\n";
 				}
 				std::string s = sendPack.SerializeAsString();
 
