@@ -4,9 +4,9 @@
 
 #include <thread>
 #include <mutex>
+#include <chrono>  // for high_resolution_clock
 
 #include "FlyCapture2.h"
-#include "windows.h"
 #include "PointGreyCam.h"
 
 using namespace FlyCapture2;
@@ -22,6 +22,7 @@ int liveStreamThread(PointGreyCam *p)
 
 	while (1)
 	{
+		auto starttime = std::chrono::steady_clock::now();
 		std::vector<cv::Mat> capturedImages;
 		p->GrabOneImage(capturedImages);
 
@@ -34,6 +35,11 @@ int liveStreamThread(PointGreyCam *p)
 			}
 		}
 
+		/***** fps *****/
+		auto endtime = std::chrono::steady_clock::now();
+		float timeElapsed = std::chrono::duration_cast<std::chrono::milliseconds>(endtime - starttime).count();
+		float fps = 1.0 * 1000 / timeElapsed;
+
 		for (int j = 0; j < capturedImages.size(); j++)
 		{
 			char windowName[1024];
@@ -42,10 +48,16 @@ int liveStreamThread(PointGreyCam *p)
 			float scaleFactor =  (float)targetWidth/ (float)capturedImages[j].size().width;
 			int targetHeight = capturedImages[j].size().height * scaleFactor;
 			cv::resize(capturedImages[j], temp, cv::Size(targetWidth,targetHeight));
+
+			char buffer[1024];
+			snprintf(buffer, 1024, "fps = %f Hz", fps);
+			cv::putText(temp, buffer,
+				cvPoint(30, 30), cv::FONT_HERSHEY_COMPLEX_SMALL,
+				0.8, cvScalar(200, 200, 250), 1, CV_AA);
+
 			cv::imshow(windowName, temp);
 			cv::waitKey(1);
 		}
-		Sleep(50);
 	}
 	return 0;
 }
