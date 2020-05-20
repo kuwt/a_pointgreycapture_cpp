@@ -3,9 +3,7 @@
 #include <iostream>
 #include <istream>
 #include <Vector>
-#include <opencv/highgui.h>
 #include <opencv2/opencv.hpp>
-#include <opencv/cv.h>
 #include "FlyCapture2.h"
 
 #define CString std::string
