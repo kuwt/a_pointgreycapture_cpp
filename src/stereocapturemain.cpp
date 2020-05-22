@@ -16,9 +16,9 @@ const int numberOfCams = 2;
 cv::Mat g_buffers[numberOfCams];
 static std::mutex g_mutex;
 
-int liveStreamThread(PointGreyCam *p)
+int liveStreamThread(PointGreyCam *p, int show_size)
 {
-	int targetWidth = 512;
+	int targetHeight = show_size;
 
 	while (1)
 	{
@@ -45,8 +45,8 @@ int liveStreamThread(PointGreyCam *p)
 			char windowName[1024];
 			sprintf_s(windowName, " Cam_%d.bmp", j);
 			cv::Mat temp;
-			float scaleFactor =  (float)targetWidth/ (float)capturedImages[j].size().width;
-			int targetHeight = capturedImages[j].size().height * scaleFactor;
+			float scaleFactor =  (float)targetHeight / (float)capturedImages[j].size().height;
+			int targetWidth = capturedImages[j].size().width * scaleFactor;
 			cv::resize(capturedImages[j], temp, cv::Size(targetWidth,targetHeight));
 
 			char buffer[1024];
@@ -67,7 +67,8 @@ int main(int argc, char *argv[])
 	int startImgIdx = 0;
 	std::string imageSavePath;
 	float exposuretime = 0; //ms
-	if (argc < 4)
+	int display_size;
+	if (argc < 5)
 	{
 		// default para
 		std::cout << "using default para\n";
@@ -79,6 +80,9 @@ int main(int argc, char *argv[])
 
 		exposuretime =  5;
 		std::cout << "exposuretime = " << exposuretime << "\n";
+
+		display_size = 512;
+		std::cout << "display_size = " << display_size << "\n";
 	}
 	else
 	{
@@ -91,6 +95,9 @@ int main(int argc, char *argv[])
 		exposuretime = std::atof(std::string(argv[3]).c_str());
 		std::cout << "exposuretime = " << exposuretime << "\n";
 
+		display_size = std::atof(std::string(argv[4]).c_str());;
+		std::cout << "display_size = " << display_size << "\n";
+
 	}
 
 	PointGreyCam pgCam;
@@ -101,7 +108,7 @@ int main(int argc, char *argv[])
 	pgCam.SetExposureTimeRaw(exposuretime);
 	pgCam.GrabImageStart();
 
-	std::thread t(liveStreamThread, &pgCam);
+	std::thread t(liveStreamThread, &pgCam, display_size);
 
 	int currentImgIdx = startImgIdx;
 	while (1)
