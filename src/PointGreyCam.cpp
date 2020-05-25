@@ -1,52 +1,69 @@
 #include "PointGreyCam.h"
 
-PointGreyCam::PointGreyCam(void)
+PointGreyCam::PointGreyCam()
 {
-    m_imageCnt=0;
-    m_nCurrentIndex = -1;
-    m_bSaveImage = false;
-    bIsUSB3 = false;
-    m_pDataBuf = 0;
-    m_bOpenDevice = 0;
+	bIsDeviceOpen = false;
 }
 
-PointGreyCam::~PointGreyCam(void)
+PointGreyCam::~PointGreyCam()
 {
-    if(m_pDataBuf){
-        delete m_pDataBuf;
-        m_pDataBuf = 0;
-    }
 }
 
 int PointGreyCam::EnumateAllDevices()
 {
-    printf(" Enumate all the devices! \n");
+    printf("Enumate all the devices! \n");
     
     BusManager busMgr;
 	unsigned int numCams;
     busMgr.GetNumOfCameras(&numCams);
 
-    for(unsigned int i=0; i<numCams;i++)
+    for(unsigned int i = 0; i < numCams; i++)
 	{
         PGRGuid guid;
         busMgr.GetCameraFromIndex(i,&guid);
-        g_DeviceGuidList.push_back(guid);
+		unsigned int serialNum = 0;
+		busMgr.GetCameraSerialNumberFromIndex(i, &serialNum);
+		m_DeviceGuidList.push_back(guid);
+		m_ExistingSNList.push_back(serialNum);
+	    std::cout << "serialNum = " << serialNum << "\n";
     }
-    g_nTotalDeviceNum = numCams;
-	m_numCams = numCams;
-	std::cout << " Camera Num: " << numCams << std::endl;
+	std::cout << "Number of Existing Cameras: " << numCams << std::endl;
 
-    return numCams;
+    return 0;
 }
 
-bool PointGreyCam::OpenDevice()
+std::vector<unsigned int> PointGreyCam::getAvailableSNs()
 {
+	return m_ExistingSNList;
+}
+
+int PointGreyCam::OpenDevice(const std::vector<unsigned int> &SNList)
+{
+	if (bIsDeviceOpen)
+	{
+		std::cerr << "device already opened!\n";
+		return -1;
+	}
+
+	//verify the number of SN available and obtain the order 
+	std::vector<int> v_order;
+	for (int i = 0; i < SNList.size(); ++i)
+	{
+		for (int j = 0; j < m_ExistingSNList.size(); ++j)
+		{
+			if (SNList[i] == m_ExistingSNList[j])
+			{
+				m_numCams++;
+				v_order.push_back(j);
+			}
+		}	
+	}
+
 	ppCameras = new Camera*[m_numCams];
 	for (unsigned int i = 0; i < m_numCams; i++)
 	{
 		ppCameras[i] = new Camera();
-		m_nCurrentIndex = i;
-		PGRGuid guid = g_DeviceGuidList[m_nCurrentIndex];
+		PGRGuid guid = m_DeviceGuidList[v_order[i]];
 		error = ppCameras[i]->Connect(&guid);
 		std::cout << " Camera " << i << " Connected. " << std::endl;
 	}
@@ -55,82 +72,36 @@ bool PointGreyCam::OpenDevice()
 	if (error != PGRERROR_OK)
 	{
 		std::cout << "" << std::endl;
-		return false;
+		return -1;
 	}
 	for (unsigned int i = 0; i < m_numCams; i++)
 	{
-		
 		triggerMode.onOff = false;
 		ppCameras[i]->SetTriggerMode(&triggerMode);
-
 	}
-	return true;
-  
-    
+	return 0;
 }
 
-bool PointGreyCam::CloseDevice()
+int PointGreyCam::CloseDevice()
 {
-    bool btn = false;
-    //if (m_nCurrentIndex>=0 && m_nCurrentIndex<g_nTotalDeviceNum)
 	for (unsigned int i = 0; i < m_numCams; i++)
 	{
 		if (ppCameras[i]->IsConnected())
 		{
 			ppCameras[i]->Disconnect();
 		}
+		delete ppCameras[i];
+		ppCameras[i] = 0;
 	}
-        
-    return btn;
+	delete[] ppCameras;
+	ppCameras = 0;
+	m_numCams = 0;
+	bIsDeviceOpen = false;
+    return 0;
 }
 
-CString PointGreyCam::GetDeviceModelName()
+int PointGreyCam::GrabOneImage(std::vector<cv::Mat>& capImages)
 {
-    char* m_modelName;
-    //if (m_nCurrentIndex>=0 && m_nCurrentIndex<g_nTotalDeviceNum)
-    {
-
-        CameraInfo m_pCamInfo;
-        m_InstantCamera.GetCameraInfo(&m_pCamInfo);
-        // std::cout<<"modeName: "<<m_pCamInfo.modelName<<std::endl;
-        m_modelName=m_pCamInfo.modelName;
-
-
-    }
-    return std::string(m_modelName);
-}
-
-CString PointGreyCam::GetDeviceSN()
-{
-    
-	unsigned int m_serialNumber;
-    //if (m_nCurrentIndex>=0 && m_nCurrentIndex<g_nTotalDeviceNum)
-    {
-        CameraInfo m_pCamInfo;
-        m_InstantCamera.GetCameraInfo(&m_pCamInfo);
-       // std::cout<<"serialNumber: "<<m_pCamInfo.serialNumber<<std::endl;
-        m_serialNumber= m_pCamInfo.serialNumber;
-    }
-    return std::to_string(m_serialNumber);
-
-}
-
-int64_t PointGreyCam::GetWidth()
-{
-   int64_t w=1280;
-   return w;
-}
-
-int64_t PointGreyCam::GetHeight()
-{
-    int64_t h=1024;
-    return h;
-
-}
-
-bool PointGreyCam::GrabOneImage(std::vector<cv::Mat>& capImages)
-{
-    bool btn=false;
 
 	for (unsigned int i = 0; i < m_numCams; i++)
     {
@@ -140,43 +111,33 @@ bool PointGreyCam::GrabOneImage(std::vector<cv::Mat>& capImages)
 		//std::cout << " Cam "<<	i <<" Image Captured. " << std::endl;
 		cv::Mat tempImage = cv::Mat(conertedImage.GetRows(), conertedImage.GetCols(), CV_8UC1, conertedImage.GetData()).clone();
 		capImages.push_back(tempImage);
-
-		//m_pDataBuf= rawImage.GetData();
-        btn=true;
     }
-    return btn;
+    return 0;
 
 }
 
-bool PointGreyCam::GrabImageStart(){
-    bool btn=false;
-	
+int PointGreyCam::GrabImageStart()
+{
 	for (unsigned int i = 0; i < m_numCams; i++)
 	{
 		ppCameras[i]->StartCapture();
 		std::cout << " Cam " << i << " Start Capture. " << std::endl;
-
 	}
-
-    btn=true;	
-    return btn;
+    return 0;
 }
 
-bool PointGreyCam::GrabImageStop()
+int PointGreyCam::GrabImageStop()
 {
-    bool btn=false;
 	for (unsigned int i = 0; i < m_numCams; i++)
 	{
 		ppCameras[i]->StopCapture();
 		std::cout << "Cam " << i << " Stop Capture. " << std::endl;
 	}
-    btn=true;
-    return btn;
+    return 0;
 }
 
-bool PointGreyCam::SetExposureTimeRaw(int64_t nValue)
+int PointGreyCam::SetExposureTimeRaw(int64_t nValue)
 {
-    bool btn=false;
     Property props;
     //SHUTTER
     props.type=SHUTTER;
@@ -185,14 +146,13 @@ bool PointGreyCam::SetExposureTimeRaw(int64_t nValue)
     props.absValue=nValue;
     props.onOff=true;
     props.onePush=false;
-    //props.valueA=nValue;
+
 	for (unsigned int i = 0; i < m_numCams; i++)
 	{
 		ppCameras[i]->SetProperty(&props);
 
 	}
-	btn = true;
-	return btn;
+	return 0;
 }
 
 

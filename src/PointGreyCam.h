@@ -6,61 +6,34 @@
 #include <opencv2/opencv.hpp>
 #include "FlyCapture2.h"
 
-#define CString std::string
 using namespace FlyCapture2;
-//using namespace cv;
-
-static std::vector<PGRGuid> g_DeviceGuidList;
-static int g_nTotalDeviceNum = 0;
 
 class PointGreyCam
 {
 public:
-    PointGreyCam(void);
-    ~PointGreyCam(void);
+    PointGreyCam();
+    ~PointGreyCam();
 
 public:
-    int  EnumateAllDevices();
-    //int  GetDeviceIndexFromUserID(CString UserID);
-    int m_imageCnt;
-    //bool SetDeviceIndex(int nIndex);
+    int EnumateAllDevices();
+	std::vector<unsigned int> getAvailableSNs();
+    int OpenDevice(const std::vector<unsigned int> &SNList);
+	int CloseDevice();
 
-    CString GetDeviceSN();
-    //CString GetDeviceUserID();
+	int GrabImageStart();
+	int GrabOneImage(std::vector<cv::Mat>& capImages);
+	int GrabImageStop();
 
-    CString GetDeviceModelName();
-
-    bool OpenDevice();
-    bool CloseDevice();
-    //bool DestroyDevice();
-
-    int64_t GetWidth();
-    int64_t GetHeight();
-
-    bool GrabImageStart();
-    //bool GrabImageStartContinuousThread();
-    bool GrabOneImage(std::vector<cv::Mat>& capImages);
-    bool GrabImageStop();
-
-
-    bool  SetExposureTimeRaw(int64_t nValue);
-    //int64_t GetExposureTimeRaw();
-    unsigned char* m_pDataBuf;
-    unsigned char* GrabOneImageData();
+	int  SetExposureTimeRaw(int64_t nValue);
 
 private:
-    int m_nCurrentIndex;
-	//static unsigned int m_numCams;
-	FlyCapture2::Error error;
-    //Create a camera object
-    Camera m_InstantCamera;
+	std::vector<PGRGuid> m_DeviceGuidList; //existing device list
+	std::vector<unsigned int> m_ExistingSNList;
+
 	Camera** ppCameras;
-    // Create a target image.
-    Image m_targetImage;
-    bool m_bSaveImage;
-    bool bIsUSB3;
-    bool m_bOpenDevice;
-	unsigned int m_numCams = 1;
+	unsigned int m_numCams = 0;
+	FlyCapture2::Error error;
+	bool bIsDeviceOpen;
 	TriggerMode triggerMode;
 };
 

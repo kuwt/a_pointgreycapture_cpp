@@ -12,8 +12,8 @@
 using namespace FlyCapture2;
 using namespace std;
 
-const int numberOfCams = 2;
-cv::Mat g_buffers[numberOfCams];
+#define MAX_CAM_NUM (20)
+cv::Mat g_buffers[MAX_CAM_NUM];
 static std::mutex g_mutex;
 
 int liveStreamThread(PointGreyCam *p, int show_size)
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 		imageSavePath = "./img";
 		std::cout << "imageSavePath = " << imageSavePath << "\n";
 
-		exposuretime =  5;
+		exposuretime =  50;
 		std::cout << "exposuretime = " << exposuretime << "\n";
 
 		display_size = 512;
@@ -103,13 +103,14 @@ int main(int argc, char *argv[])
 	PointGreyCam pgCam;
 
 	pgCam.EnumateAllDevices();
-	pgCam.OpenDevice();
+	pgCam.OpenDevice(pgCam.getAvailableSNs());
 
 	pgCam.SetExposureTimeRaw(exposuretime);
 	pgCam.GrabImageStart();
 
 	std::thread t(liveStreamThread, &pgCam, display_size);
 
+	int numOfCameras = pgCam.getAvailableSNs().size();
 	int currentImgIdx = startImgIdx;
 	while (1)
 	{
@@ -120,10 +121,10 @@ int main(int argc, char *argv[])
 		char filename[1024];
 
 		std::vector<cv::Mat> capturedImages;
-		capturedImages.resize(numberOfCams);
+		capturedImages.resize(numOfCameras);
 		{
 			std::lock_guard<std::mutex> lk(g_mutex);
-			for (int j = 0; j < numberOfCams; j++)
+			for (int j = 0; j < numOfCameras; j++)
 			{
 				capturedImages[j] = g_buffers[j].clone();
 			}
