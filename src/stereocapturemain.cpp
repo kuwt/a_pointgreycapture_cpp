@@ -5,12 +5,9 @@
 #include <thread>
 #include <mutex>
 #include <chrono>  // for high_resolution_clock
-
-#include "FlyCapture2.h"
+#include <iostream>
 #include "PointGreyCam.h"
 
-using namespace FlyCapture2;
-using namespace std;
 
 #define MAX_CAM_NUM (20)
 cv::Mat g_buffers[MAX_CAM_NUM];
@@ -147,7 +144,7 @@ int main(int argc, char *argv[])
 	while (1)
 	{
 		std::cout << "press enter to save images." << "\n";
-		cin.ignore();
+		std::cin.ignore();
 
 		// save images
 		char filename[1024];

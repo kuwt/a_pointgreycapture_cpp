@@ -3,7 +3,6 @@
 #endif
 
 
-#include "FlyCapture2.h"
 #include "PointGreyCam.h"
 
 #include <string.h>
@@ -14,8 +13,6 @@
 #include <zmq.hpp>
 #include "imagepack.pb.h"
 
-using namespace FlyCapture2;
-using namespace std;
 
 
 inline std::vector<std::string> split(const std::string& s, std::string delimiter)
