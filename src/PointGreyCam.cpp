@@ -59,6 +59,7 @@ int PointGreyCam::OpenDevice(const std::vector<unsigned int> &SNList)
 		}	
 	}
 
+	std::cout << "use cam num = " << m_numCams << "\n";
 	ppCameras = new Camera*[m_numCams];
 	for (unsigned int i = 0; i < m_numCams; i++)
 	{

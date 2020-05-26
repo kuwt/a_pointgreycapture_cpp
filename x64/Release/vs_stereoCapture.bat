@@ -1,1 +1,1 @@
-vs_stereoCapture.exe 0 ./img 30
+vs_stereoCapture.exe 0 ./img 40 512

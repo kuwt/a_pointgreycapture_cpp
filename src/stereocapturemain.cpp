@@ -62,54 +62,86 @@ int liveStreamThread(PointGreyCam *p, int show_size)
 	return 0;
 }
 
+inline std::vector<std::string> split(const std::string& s, std::string delimiter)
+{
+	std::vector<std::string> result;
+
+	std::size_t current = 0;
+	std::size_t p = s.find_first_of(delimiter, 0);
+
+	while (p != std::string::npos)
+	{
+		result.emplace_back(s, current, p - current);
+		current = p + 1;
+		p = s.find_first_of(delimiter, current);
+	}
+
+	result.emplace_back(s, current);
+
+	return result;
+}
+
 int main(int argc, char *argv[])
 {
+	/****** parameter *****/
 	int startImgIdx = 0;
-	std::string imageSavePath;
-	float exposuretime = 0; //ms
-	int display_size;
-	if (argc < 5)
+	std::string imageSavePath= "./img";
+	float exposuretime = 50; //ms
+	int display_size = 512;
+	bool isUsedAllDevices = true;
+	std::vector<unsigned int> snlist;
+
+	if (argc > 2) //two parameter
 	{
-		// default para
-		std::cout << "using default para\n";
-		startImgIdx = 0;
-		std::cout << "startImgIdx = " << startImgIdx << "\n";
+		startImgIdx = std::atof(std::string(argv[1]).c_str());
+		imageSavePath = std::string(argv[2]).c_str();
+	}
+	if (argc > 3)
+	{
+		exposuretime = std::atof(std::string(argv[3]).c_str());
+	}
+	if (argc > 4)
+	{
+		display_size = std::atof(std::string(argv[4]).c_str());
+	}
+	if (argc > 5)
+	{
+		isUsedAllDevices = false;
+		std::vector<std::string> tmplist = split(std::string(argv[5]), ";");
+		for (int i = 0; i < tmplist.size(); ++i)
+		{
+			snlist.push_back(std::atof(tmplist[i].c_str()));
+		}
+	}
 
-		imageSavePath = "./img";
-		std::cout << "imageSavePath = " << imageSavePath << "\n";
+	std::cout << "exposuretime = " << exposuretime << "\n";
+	std::cout << "imageSavePath = " << imageSavePath << "\n";
+	std::cout << "startImgIdx = " << startImgIdx << "\n";
+	std::cout << "display_size = " << display_size << "\n";
+	std::cout << "isUsedAllDevices = " << isUsedAllDevices << "\n";
+	for (int i = 0; i < snlist.size(); ++i)
+	{
+		std::cout << "snlist = " << snlist[i] << "\n";
+	}
 
-		exposuretime =  50;
-		std::cout << "exposuretime = " << exposuretime << "\n";
+	/****** start *****/
+	PointGreyCam pgCam;
+	pgCam.EnumateAllDevices();
 
-		display_size = 512;
-		std::cout << "display_size = " << display_size << "\n";
+	if (isUsedAllDevices)
+	{
+		pgCam.OpenDevice(pgCam.getAvailableSNs());
 	}
 	else
 	{
-		startImgIdx = std::atof(std::string(argv[1]).c_str());
-		std::cout << "startImgIdx = " << startImgIdx << "\n";
-
-		imageSavePath = std::string(argv[2]).c_str();
-		std::cout << "imageSavePath = " << imageSavePath << "\n";
-
-		exposuretime = std::atof(std::string(argv[3]).c_str());
-		std::cout << "exposuretime = " << exposuretime << "\n";
-
-		display_size = std::atof(std::string(argv[4]).c_str());;
-		std::cout << "display_size = " << display_size << "\n";
-
+		pgCam.OpenDevice(snlist);
 	}
-
-	PointGreyCam pgCam;
-
-	pgCam.EnumateAllDevices();
-	pgCam.OpenDevice(pgCam.getAvailableSNs());
-
+	
 	pgCam.SetExposureTimeRaw(exposuretime);
 	pgCam.GrabImageStart();
 
+	/****** loop *****/
 	std::thread t(liveStreamThread, &pgCam, display_size);
-
 	int numOfCameras = pgCam.getAvailableSNs().size();
 	int currentImgIdx = startImgIdx;
 	while (1)
@@ -138,6 +170,8 @@ int main(int argc, char *argv[])
 		}
 		currentImgIdx++;
 	}
+
+	/****** end *****/
 	pgCam.GrabImageStop();
 	pgCam.CloseDevice();
 	

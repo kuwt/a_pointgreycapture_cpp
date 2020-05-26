@@ -18,22 +18,58 @@ using namespace FlyCapture2;
 using namespace std;
 
 
+inline std::vector<std::string> split(const std::string& s, std::string delimiter)
+{
+	std::vector<std::string> result;
+
+	std::size_t current = 0;
+	std::size_t p = s.find_first_of(delimiter, 0);
+
+	while (p != std::string::npos)
+	{
+		result.emplace_back(s, current, p - current);
+		current = p + 1;
+		p = s.find_first_of(delimiter, current);
+	}
+
+	result.emplace_back(s, current);
+
+	return result;
+}
+
 int main(int argc, char *argv[])
 {
+	/****** parameter *****/
+	float exposuretime = 5; //ms
+	std::string serverport = "5555";
+	bool isUsedAllDevices = true;
+	std::vector<unsigned int> snlist;
 
-	float exposuretime = 0; //ms
-	if (argc < 2)
-	{
-		// default para
-		std::cout << "using default para\n";
-
-		exposuretime = 5;
-		std::cout << "exposuretime = " << exposuretime << "\n";
-	}
-	else
-	{
+	if (argc > 1) // 1 parameter
+	{ 
 		exposuretime = std::atof(std::string(argv[1]).c_str());
-		std::cout << "exposuretime = " << exposuretime << "\n";
+	}
+	if (argc > 2)
+	{
+		serverport = std::string(argv[2]).c_str();
+	}
+	if (argc > 3)
+	{
+		isUsedAllDevices = false;
+		std::vector<std::string> tmplist = split(std::string(argv[3]), ";");
+		for (int i = 0; i < tmplist.size(); ++i)
+		{
+			snlist.push_back(std::atof(tmplist[i].c_str()));
+			std::cout << "snlist = " << snlist[i] << "\n";
+		}
+	}
+
+	std::cout << "exposuretime = " << exposuretime << "\n";
+	std::cout << "serverport = " << serverport << "\n";
+	std::cout << "isUsedAllDevices = " << isUsedAllDevices << "\n";
+	for (int i = 0; i < snlist.size(); ++i)
+	{
+		std::cout << "sn = " << snlist[i] << "\n";
 	}
 
 	/****** start service **********/
@@ -41,12 +77,20 @@ int main(int argc, char *argv[])
 	zmq::context_t m_context = zmq::context_t(1);
 	zmq::socket_t *m_pSock;
 	m_pSock = new zmq::socket_t(m_context, ZMQ_REP); // rep for server
-	m_pSock->bind("tcp://*:5555");
+	std::string server_ip = "tcp://*:" + serverport;
+	m_pSock->bind(server_ip);
 
 	/****** start camera **********/
 	PointGreyCam pgCam;
 	pgCam.EnumateAllDevices();
-	pgCam.OpenDevice();
+	if (isUsedAllDevices)
+	{
+		pgCam.OpenDevice(pgCam.getAvailableSNs());
+	}
+	else
+	{
+		pgCam.OpenDevice(snlist);
+	}
 	pgCam.SetExposureTimeRaw(exposuretime);
 	pgCam.GrabImageStart();
 
@@ -91,6 +135,7 @@ int main(int argc, char *argv[])
 	std::cout << "press to continue \n";
 	getchar();
 
+	/****** end *****/
 	m_pSock->close();
 	delete m_pSock;
 
