@@ -1,8 +1,5 @@
 
-#include <ostream>
-#include <iostream>
-#include <istream>
-#include <Vector>
+
 #include <opencv2/opencv.hpp>
 #include "FlyCapture2.h"
 
