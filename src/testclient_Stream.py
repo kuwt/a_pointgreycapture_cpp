@@ -51,12 +51,11 @@ if __name__ == '__main__' :
         
         #####  display ####
         targetHeight = 400
-        for img in imglist:
+        for i,img in enumerate(imglist):
             scaleFactor =  float(targetHeight)/ float(img.shape[0]);
             targetWidth = int(img.shape[1] * scaleFactor);
             displayImg = cv2.resize(img,(targetWidth,targetHeight))
-
-            cv2.imshow('window',displayImg)
+	
+            cv2.imshow('window{}'.format(i),displayImg)
             key = cv2.waitKey(1) & 0xFF
-            sleep(0.02) #20 fps
 
