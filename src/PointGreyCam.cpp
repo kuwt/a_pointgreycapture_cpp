@@ -1,7 +1,7 @@
 #include <ostream>
 #include <iostream>
 #include <istream>
-#include <Vector>
+#include <vector>
 #include "PointGreyCam.h"
 
 PointGreyCam::PointGreyCam()

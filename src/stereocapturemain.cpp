@@ -40,7 +40,7 @@ int liveStreamThread(PointGreyCam *p, int show_size)
 		for (int j = 0; j < capturedImages.size(); j++)
 		{
 			char windowName[1024];
-			sprintf_s(windowName, " Cam_%d.bmp", j);
+			snprintf(windowName, 1024, " Cam_%d.bmp", j);
 			cv::Mat temp;
 			float scaleFactor =  (float)targetHeight / (float)capturedImages[j].size().height;
 			int targetWidth = capturedImages[j].size().width * scaleFactor;
@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
 
 		for (int k = 0; k < capturedImages.size(); k++)
 		{
-			sprintf_s(filename, "%s/Cam_%d_%d.bmp", imageSavePath.c_str(), k, currentImgIdx);
+			snprintf(filename, 1024, "%s/Cam_%d_%d.bmp", imageSavePath.c_str(), k, currentImgIdx);
 			cv::imwrite(filename, capturedImages[k]);
 			std::cout << filename << " Saved. " << std::endl;
 		}
