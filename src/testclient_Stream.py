@@ -49,17 +49,14 @@ if __name__ == '__main__' :
             stacked_img = np.stack((img,)*3, axis=-1) ##rearrange rgb
             imglist.append(stacked_img)
         
-        ##### format display ####
-        numpy_horizontal_concat = np.concatenate((imglist[0], imglist[1]), axis=1) 
-        
-        targetHeight = 400
-        scaleFactor =  float(targetHeight)/ float(numpy_horizontal_concat.shape[0]);
-        targetWidth = int(numpy_horizontal_concat.shape[1] * scaleFactor);
-        displayImg = cv2.resize(numpy_horizontal_concat,(targetWidth,targetHeight))
-   
         #####  display ####
-        cv2.imshow('window',displayImg)
-        key = cv2.waitKey(1) & 0xFF
-        
-        sleep(0.02) #20 fps
+        targetHeight = 400
+        for img in imglist:
+            scaleFactor =  float(targetHeight)/ float(img.shape[0]);
+            targetWidth = int(img.shape[1] * scaleFactor);
+            displayImg = cv2.resize(img,(targetWidth,targetHeight))
+
+            cv2.imshow('window',displayImg)
+            key = cv2.waitKey(1) & 0xFF
+            sleep(0.02) #20 fps
 
